@@ -229,25 +229,24 @@ public class test {
 
 		public void mouseReleased(MouseEvent e) {
 			EndP = e.getPoint();
-			VC.lastElement().setSize(EndP.getX() - StartP.getX(), EndP.getY() - StartP.getY());
-			VC.lastElement().addMouseListener(MoverMouse);
-			VC.lastElement().addMouseMotionListener(MoverMouse);
+			VC.lastElement().setSize(EndP.x - StartP.x, EndP.y - StartP.y);
+			VC.lastElement().addMouseListener(SizerMouse);
+			VC.lastElement().addMouseMotionListener(SizerMouse);
 		}
 
 		public void mouseDragged(MouseEvent e) {
 			EndP = e.getPoint();
-			VC.lastElement().setSize(EndP.getX() - StartP.getX(), EndP.getY() - StartP.getY());
+			VC.lastElement().setSize(EndP.x - StartP.x, EndP.y - StartP.y);
 		}
 
 		public void mouseMoved(MouseEvent e) {
-
+		
 		}
 	}
 
 	class MoverMouseListener extends MouseAdapter implements MouseMotionListener {
 		Point StartP = null;
 		Point EndP = null;
-		MyComponent mvc;
 		
 		public void mousePressed(MouseEvent e) {
 			StartP = e.getPoint();
@@ -271,16 +270,21 @@ public class test {
 		Point EndP = null;
 
 		public void mousePressed(MouseEvent e) {
-
+			StartP = e.getPoint();
+			System.out.println("StartP : " + StartP);
 		}
 
 		public void mouseReleased(MouseEvent e) {
-
+			EndP = e.getPoint();
+			System.out.println("EndP : " + EndP);
+			e.getComponent().setSize(EndP.x, EndP.y);
 		}
 
 		public void mouseDragged(MouseEvent e) {
-
+			EndP = e.getPoint();
+			e.getComponent().setSize(EndP.x, EndP.y);
 		}
+		
 	}
 
 	class MyComponent extends JButton {
@@ -331,8 +335,8 @@ public class test {
 
 		public void setLocation(Point p) {
 			this.p = p;
-			T_x.setText(Double.toString(p.x));
-			T_y.setText(Double.toString(p.y));
+			T_x.setText(Integer.toString(p.x));
+			T_y.setText(Integer.toString(p.y));
 			super.setLocation(p);
 		}
 		
@@ -345,16 +349,16 @@ public class test {
 		
 		public void setSize(Dimension d) {
 			this.d = d;
-			T_w.setText(Double.toString(d.getWidth()));
-			T_h.setText(Double.toString(d.getHeight()));
+			T_w.setText(Integer.toString(d.width));
+			T_h.setText(Integer.toString(d.height));
 			super.setSize(d);
 		}
 
-		public void setSize(double w, double h) {
+		public void setSize(int w, int h) {
 			d.setSize(w, h);
-			T_w.setText(Double.toString(d.getWidth()));
-			T_h.setText(Double.toString(d.getHeight()));
-			super.setSize(d);
+			T_w.setText(Integer.toString(d.width));
+			T_h.setText(Integer.toString(d.height));
+			super.setSize(w, h);
 		}
 
 		public void updata() {
