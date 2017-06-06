@@ -29,6 +29,8 @@ public class test{
 	DestroyerMouseListener DestroyerMouse = new DestroyerMouseListener();
 	
 	int IOC = 0;// Index of Component
+	int mode;
+
 	
 	Vector<MyComponent> VC = new Vector<MyComponent>(); //Vector of Components
 	
@@ -70,7 +72,7 @@ public class test{
 		JButton SaveButton = new JButton("Save");
 
 		JButton DeleteButton = new JButton("Delete");
-		DeleteButton.addActionListener(new DelCompoListener());
+		DeleteButton.addActionListener(new ChangeModeListener());
 		
 		toolBar = new JToolBar();
 		toolBar.setRollover(true);
@@ -85,7 +87,6 @@ public class test{
 	
 	
 	void mkCenterP() {
-		
 		centerP = new JPanel(null);
 		mainFrame.add(centerP, BorderLayout.CENTER);
 		centerP.setBackground(Color.white);
@@ -135,14 +136,32 @@ public class test{
 		}
 	}
 	
-	class DelCompoListener implements ActionListener {
+	class ChangeModeListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			VC.lastElement().T_y.disable();
-			VC.lastElement().T_x.disable();
-			VC.lastElement().T_w.disable();
-			VC.lastElement().T_name.disable();
-			VC.lastElement().T_h.disable();
-			VC.lastElement().hide();		
+			if(mode ==0)
+				mode =1;
+			else
+				mode =0;
+			
+			System.out.println("mode: "+mode);
+		}
+	}
+
+	class ClickButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			for(MyComponent I: VC){
+				if(e.getSource() == I){
+					I.hide();
+					I.T_x.disable();
+					I.T_y.disable();
+					I.T_w.disable();
+					I.T_h.disable();
+					I.T_name.disable();
+					I.updata();
+					VC.removeElement(I);
+					break;
+				}
+			}
 		}
 	}
 	
@@ -193,12 +212,9 @@ public class test{
 		JTextField T_w = new JTextField();
 		JTextField T_h = new JTextField();
 		
-		public void finalize() {
-            System.out.println("객체의 마지막 유언... ");
-		}
-
 		MyComponent() {// 디폴트 생성자
 			centerP.add(this);
+			addActionListener(new ClickButtonListener());
 			setName("unknown");
 			setLocation(new Point(200, 200));
 			setSize(new Dimension(100, 100));
@@ -207,6 +223,7 @@ public class test{
 
 		MyComponent(String name, int x, int y, Dimension d) {// 위치, 크기
 			centerP.add(this);
+			addActionListener(new ClickButtonListener());
 			setName(name);
 			setLocation(new Point(x, y));
 			setSize(d);
@@ -215,6 +232,7 @@ public class test{
 
 		MyComponent(String name) {// 이름, 위치, 크기
 			centerP.add(this);
+			addActionListener(new ClickButtonListener());
 			setName(name);
 			setLocation(new Point(200, 200));
 			setSize(new Dimension(100,100));
