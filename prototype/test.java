@@ -30,7 +30,9 @@ public class test {
 	SizerMouseListener SizerMouse = new SizerMouseListener();
 
 	int IOC = 0;// Index of Component
-	int MOM = 0;// Mode of Mouse
+	int MOM = 0;// Mode of Mouse 0. hand mode, 1. remover mode, 2. maker mode
+	
+	
 
 	Vector<MyComponent> VC = new Vector<MyComponent>(); // Vector of Components
 
@@ -108,7 +110,6 @@ public class test {
 	}
 
 	void mkTab() {
-		IOC++;
 		JPanel TP = new JPanel();
 		TP.setPreferredSize(new Dimension(200, 100));
 		tabbedPanel.addTab(Integer.toString(IOC), TP);
@@ -142,7 +143,41 @@ public class test {
 	
 	class TextListener implements ActionListener{
 		public void actionPerformed(ActionEvent e){
-			System.out.println(e.getActionCommand());
+			for(MyComponent I : VC){
+				if(e.getSource() == I.T_name){
+					I.name = e.getActionCommand();
+					statusLabel.setText("changed Name");
+					I.updata();
+					break;
+				}
+				else if(e.getSource() == null){
+					statusLabel.setText("NumberFormatException");
+				}
+				else if(e.getSource() == I.T_x){
+					I.p.x = Integer.parseInt(e.getActionCommand());
+					statusLabel.setText("changed X");
+					I.updata();
+					break;
+				}
+				else if(e.getSource() == I.T_y){
+					I.p.y = Integer.parseInt(e.getActionCommand());
+					statusLabel.setText("changed Y");
+					I.updata();
+					break;
+				}
+				else if(e.getSource() == I.T_w){
+					I.d.width = Integer.parseInt(e.getActionCommand());
+					statusLabel.setText("changed width");
+					I.updata();
+					break;
+				}
+				else if(e.getSource() == I.T_h){
+					I.d.height = Integer.parseInt(e.getActionCommand());
+					statusLabel.setText("changed height");
+					I.updata();
+					break;
+				}
+			}
 		}
 	}
 
@@ -186,6 +221,7 @@ public class test {
 		Point EndP = null;
 
 		public void mousePressed(MouseEvent e) {
+			IOC++;
 			StartP = e.getPoint();
 			VC.add(new MyComponent(Integer.toString(IOC), StartP.x, StartP.y, new Dimension(0, 0)));
 			mkTab();
@@ -194,6 +230,8 @@ public class test {
 		public void mouseReleased(MouseEvent e) {
 			EndP = e.getPoint();
 			VC.lastElement().setSize(EndP.getX() - StartP.getX(), EndP.getY() - StartP.getY());
+			VC.lastElement().addMouseListener(MoverMouse);
+			VC.lastElement().addMouseMotionListener(MoverMouse);
 		}
 
 		public void mouseDragged(MouseEvent e) {
@@ -209,17 +247,22 @@ public class test {
 	class MoverMouseListener extends MouseAdapter implements MouseMotionListener {
 		Point StartP = null;
 		Point EndP = null;
-
+		MyComponent mvc;
+		
 		public void mousePressed(MouseEvent e) {
-
+			StartP = e.getPoint();
+			//System.out.println("StartP : " + StartP);
 		}
 
 		public void mouseReleased(MouseEvent e) {
-
+			EndP = e.getPoint();
+			e.getComponent().setLocation(e.getComponent().getX()+EndP.x-StartP.x,e.getComponent().getY()+EndP.y-StartP.y);
+			//System.out.println("EndP : " + EndP);
 		}
 
 		public void mouseDragged(MouseEvent e) {
-
+			EndP = e.getPoint();
+			e.getComponent().setLocation(e.getComponent().getX()+EndP.x-StartP.x,e.getComponent().getY()+EndP.y-StartP.y);
 		}
 	}
 
@@ -241,6 +284,7 @@ public class test {
 	}
 
 	class MyComponent extends JButton {
+		
 		String name;
 		Point p;
 		Dimension d;
@@ -259,6 +303,10 @@ public class test {
 			setSize(new Dimension(100, 100));
 			System.out.println("Default-c");
 			T_name.addActionListener(new TextListener());
+			T_x.addActionListener(new TextListener());
+			T_y.addActionListener(new TextListener());
+			T_w.addActionListener(new TextListener());
+			T_h.addActionListener(new TextListener());
 		}
 
 		MyComponent(String name, int x, int y, Dimension d) {// 위치, 크기
@@ -269,23 +317,16 @@ public class test {
 			setSize(d);
 			System.out.println("npd-c");
 			T_name.addActionListener(new TextListener());
-		}
-
-		MyComponent(String name) {// 이름, 위치, 크기
-			centerP.add(this);
-			addActionListener(new ClickButtonListener());
-			setName(name);
-			setLocation(new Point(200, 200));
-			setSize(new Dimension(100, 100));
-			System.out.println("n-c");
-			T_name.addActionListener(new TextListener());
+			T_x.addActionListener(new TextListener());
+			T_y.addActionListener(new TextListener());
+			T_w.addActionListener(new TextListener());
+			T_h.addActionListener(new TextListener());
 		}
 
 		public void setName(String name) {
 			this.name = name;
 			super.setText(name);
 			T_name.setText(name);
-			System.out.println("setname : " + name);
 		}
 
 		public void setLocation(Point p) {
@@ -294,7 +335,14 @@ public class test {
 			T_y.setText(Double.toString(p.y));
 			super.setLocation(p);
 		}
-
+		
+		public void setLocation(int x, int y){
+			p.setLocation(x, y);
+			T_x.setText(Integer.toString(x));
+			T_y.setText(Integer.toString(y));
+			super.setLocation(x, y);
+		}
+		
 		public void setSize(Dimension d) {
 			this.d = d;
 			T_w.setText(Double.toString(d.getWidth()));
