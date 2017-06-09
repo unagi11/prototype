@@ -29,10 +29,7 @@ public class test {
 	JLabel statusLabel;
 	
 	MakerMouseListener MakerMouse = new MakerMouseListener();
-	MoverMouseListener MoverMouse = new MoverMouseListener();
-	SizerMouseListener SizerMouse = new SizerMouseListener();
 	SelectorMouseListener SelectorMouse = new SelectorMouseListener();
-
 	
 	int IOC = 0;// Index of Component
 	int MOM = 0;// Mode of Mouse 0. hand mode, 1. remove mode, 2. maker mode
@@ -229,6 +226,7 @@ public class test {
 	}
 
 	class MakerMouseListener extends MouseAdapter implements MouseMotionListener {
+		
 		Point StartP = null;
 		Point EndP = null;
 
@@ -241,10 +239,6 @@ public class test {
 		public void mouseReleased(MouseEvent e) {
 			EndP = e.getPoint();
 			VC.lastElement().setSize(EndP.x - StartP.x, EndP.y - StartP.y);
-			centerP.removeMouseListener(MakerMouse);
-			centerP.removeMouseMotionListener(MakerMouse);
-			centerP.addMouseListener(SelectorMouse);
-			centerP.addMouseMotionListener(SelectorMouse);
 		}
 
 		public void mouseDragged(MouseEvent e) {
@@ -253,73 +247,9 @@ public class test {
 		}
 	}
 
-	class MoverMouseListener extends MouseAdapter implements MouseMotionListener {
-		Point StartP = null;
-		Point EndP = null;
-		MyComponent T;
-
-		public void mousePressed(MouseEvent e) {
-			StartP = e.getPoint();
-			for (MyComponent I : VC) {
-				if (I.UCP == e.getComponent()) {
-					T = I;
-					break;
-				}
-			}
-			// System.out.println("StartP : " + StartP);
-		}
-
-		public void mouseReleased(MouseEvent e) {
-			EndP = e.getPoint();
-			T.setLocation(e.getComponent().getX() + EndP.x - StartP.x,
-					e.getComponent().getY() + EndP.y - StartP.y);
-			// System.out.println("EndP : " + EndP);
-		}
-
-		public void mouseDragged(MouseEvent e) {
-			EndP = e.getPoint();
-			T.setLocation(e.getComponent().getX() + EndP.x - StartP.x,
-					e.getComponent().getY() + EndP.y - StartP.y);
-		}
-	}
-
-	class SizerMouseListener extends MouseAdapter implements MouseMotionListener {
-		Point StartP = null;
-		Point EndP = null;
-		MyComponent T;
-		Boolean MOM2 = true;
-		public void mousePressed(MouseEvent e) {
-			StartP = e.getPoint();
-			for (MyComponent I : VC) {
-				if (I.UCP == e.getComponent()) {
-					T = I;
-					break;
-				}
-			}
-			System.out.println("StartP : " + StartP);
-		}
-
-		public void mouseReleased(MouseEvent e) {
-			EndP = e.getPoint();
-			System.out.println("EndP : " + EndP);
-//			T.setSize(EndP.x, EndP.y);
-		}
-
-		public void mouseDragged(MouseEvent e) {
-			EndP = e.getPoint();
-	//		T.setSize(EndP.x, EndP.y);
-		}
-		public void mouseMoved(MouseEvent e) {
-			
-		}
-	}
-	class PanelMouseListener extends MouseAdapter implements MouseMotionListener{
-		
-	}
 	class SelectorMouseListener extends MouseAdapter implements MouseMotionListener{
 		Point StartP = null;
 		Point EndP = null;
-		Point S, N, W, E, SE, SW, NW, NE;
 		
 		MyComponent SC = null;//Selected Component
 		
@@ -331,47 +261,58 @@ public class test {
 			for (MyComponent I : VC) {//선택
 				if (I.UCP == e.getComponent()) {
 					SC = I;
-					SE = new Point(SC.d.width, SC.d.height);
-					I.setName("넌 선택되었다");
-					return;
+					System.out.println(I.UCP.getBackground());
+					I.UCP.setBackground(Color.pink);
+					tabbedPanel.setSelectedIndex(I.index-1);
 				}
 				else{//만약 선택된게 있었더라면 선택 취소
-					I.setName("넌 선택안되었다.");	
+					I.UCP.setBackground(Color.LIGHT_GRAY);
 				}
 			}
 			System.out.println("StartP : " + StartP);
 		}
 
-		public void mouseReleased(MouseEvent e) {
+/*		public void mouseReleased(MouseEvent e) {
 			if(centerP == e.getComponent()){//만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
 				SC = null;
 				return;
 			}
 			EndP = e.getPoint();
 			System.out.println("EndP : " + EndP);
-			SC.setSize(EndP.x, EndP.y);
-		}
+		}*/
 
 		public void mouseDragged(MouseEvent e) {
+			int type = e.getComponent().getCursor().getType();
+
 			if(centerP == e.getComponent()){//만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
 				SC = null;
 				return;
 			}
 			EndP = e.getPoint();
-			SC.setSize(EndP.x, EndP.y);
+			switch(type){
+			case Cursor.MOVE_CURSOR:
+				SC.setLocation(e.getComponent().getX() + EndP.x - StartP.x,e.getComponent().getY() + EndP.y - StartP.y);
+				break;
+			case Cursor.SE_RESIZE_CURSOR:
+				SC.setSize(EndP.x+5,EndP.y+5);
+				break;
+			}			
 		}
 		public void mouseMoved(MouseEvent e) {
 			if(SC == null)
 				return;
 			else if(SC.UCP == e.getComponent()){
-				if(e.getPoint().distance(SE) < 50)
+				if(e.getPoint().distance(SC.SE) < 20){
 					SC.UCP.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
+					System.out.println(e.getPoint().distance(SC.SE));
+				}
+				else{
+					SC.UCP.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+				}
 			}
 			else{//SC가 존재하고 마우스가 밖에 있을때
 				SC.UCP.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-				SC.setName("넌 선택되었다.");
 			}
-			
 		}
 	}
 
@@ -394,6 +335,15 @@ public class test {
 		JTextField T_w = new JTextField();
 		JTextField T_h = new JTextField();
 
+		Point S = new Point();
+		Point N = new Point();
+		Point W = new Point();
+		Point E = new Point();
+		Point SE = new Point();
+		Point SW = new Point();
+		Point NW = new Point();
+		Point NE = new Point();
+		
 		MyComponent(int index, int x, int y, Dimension d) {// 위치, 크기
 			this.index = index;
 			setName("Component " + Integer.toString(index));
@@ -428,6 +378,7 @@ public class test {
 			T_w.setText(Integer.toString(d.width));
 			T_h.setText(Integer.toString(d.height));
 			UCP.setSize(d);
+			updateCoordinate();
 		}
 
 		public void setSize(int w, int h) {
@@ -435,8 +386,20 @@ public class test {
 			T_w.setText(Integer.toString(d.width));
 			T_h.setText(Integer.toString(d.height));
 			UCP.setSize(w, h);
+			updateCoordinate();
 		}
-
+		
+		private void updateCoordinate(){
+			S.setLocation(d.width/2, d.height);
+			N.setLocation(d.width/2, 0);
+			W.setLocation(0, d.height/2);
+			E.setLocation(d.width, d.height/2);
+			SE.setLocation(d.width, d.height);
+			SW.setLocation(0, d.height);
+			NW.setLocation(0, 0);
+			NE.setLocation(d.width, 0);
+		}
+		
 		public void updata() {
 			setName(name);
 			setLocation(p);
@@ -452,6 +415,7 @@ public class test {
 			T_w.addActionListener(new TextListener());
 			T_h.addActionListener(new TextListener());
 			UCP.setOpaque(true);
+			UCP.setBackground(Color.LIGHT_GRAY);
 			UCP.addMouseMotionListener(SelectorMouse);
 			UCP.addMouseListener(SelectorMouse);
 		}
