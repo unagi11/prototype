@@ -8,6 +8,8 @@ import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -17,6 +19,8 @@ import java.awt.event.MouseMotionListener;
 import java.util.Vector;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 //import Test.MyPanel;
 public class test {
@@ -27,12 +31,12 @@ public class test {
 	private JToolBar toolBar;
 
 	JLabel statusLabel;
-	
+
 	MakerMouseListener MakerMouse = new MakerMouseListener();
 	SelectorMouseListener SelectorMouse = new SelectorMouseListener();
-	
+
 	int IOC = 0;// Index of Component
-	int MOM = 0;// Mode of Mouse 0. hand mode, 1. remove mode, 2. maker mode
+	boolean MMO = false;// Maker Mouse On
 
 	Vector<MyComponent> VC = new Vector<MyComponent>(); // Vector of Components
 
@@ -46,7 +50,6 @@ public class test {
 		mkNorthP();
 		mkCenterP();
 		mkWestP();
-
 		statusLabel = new JLabel("Status", JLabel.CENTER);
 		statusLabel.setSize(350, 100);
 		statusLabel.setForeground(Color.blue);
@@ -56,11 +59,21 @@ public class test {
 		JMenu m_File = new JMenu("File");
 
 		JMenuItem mi_New = new JMenuItem("New");
-		m_File.add(mi_New);
+		mi_New.addActionListener(new NewButtonListener());
+		
 		JMenuItem mi_Open = new JMenuItem("Open");
-		m_File.add(mi_Open);
+		mi_Open.addActionListener(new OpenButtonListener());
+		
 		JMenuItem mi_Save = new JMenuItem("Save");
+		mi_Save.addActionListener(new SaveButtonListener());
+		
+		JMenuItem mi_Delete = new JMenuItem("Delete");
+		mi_Delete.addActionListener(new DeleteButtonListener());
+		
+		m_File.add(mi_New);
+		m_File.add(mi_Open);
 		m_File.add(mi_Save);
+		m_File.add(mi_Delete);
 
 		myMenuBar.add(m_File);
 		mainFrame.setJMenuBar(myMenuBar);
@@ -70,22 +83,19 @@ public class test {
 	void mkNorthP() {
 		northP = new JPanel();
 		mainFrame.add(northP, BorderLayout.NORTH);
+		northP.setLayout(new BorderLayout());
 
 		JButton NewButton = new JButton("New");
 		NewButton.addActionListener(new NewButtonListener());
-		northP.setLayout(new BorderLayout());
 
 		JButton OpenButton = new JButton("Open");
+		OpenButton.addActionListener(new OpenButtonListener());
+		
 		JButton SaveButton = new JButton("Save");
-
+		SaveButton.addActionListener(new SaveButtonListener());
+		
 		JButton DeleteButton = new JButton("Delete");
 		DeleteButton.addActionListener(new DeleteButtonListener());
-
-		JButton SizeButton = new JButton("Size");
-		SizeButton.addActionListener(new SizeButtonListener());
-
-		JButton MoveButton = new JButton("Move");
-		MoveButton.addActionListener(new MoveButtonListener());
 
 		toolBar = new JToolBar();
 		toolBar.setRollover(true);
@@ -112,10 +122,18 @@ public class test {
 		mainFrame.add(westP, BorderLayout.WEST);
 		tabbedPanel = new JTabbedPane();
 		tabbedPanel.setPreferredSize(new Dimension(200, 800));
+		tabbedPanel.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				for (MyComponent I : VC) {// 선택
+					if (I.index-1 == tabbedPanel.getSelectedIndex()) 
+						I.UCP.setBackground(Color.pink);
+					else // 만약 선택된게 있었더라면 선택 취소
+						I.UCP.setBackground(Color.LIGHT_GRAY);
+				}
+			}
+		});
 		westP.add(tabbedPanel);
 	}
-
-
 
 	public static void main(String[] args) {
 		new test();
@@ -123,8 +141,8 @@ public class test {
 
 	class NewButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			statusLabel.setText("maked Tab");
-
+			MMO = true;
+			statusLabel.setText("Maker Mouse Mode On");
 		}
 	}
 
@@ -144,40 +162,40 @@ public class test {
 
 	class DeleteButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			if (MOM != 1) {
-				MOM = 1;
-				statusLabel.setText("Delete Mode On");
-			} else {
-				MOM = 0;
-				statusLabel.setText("Delete Mode Off");
+			for (MyComponent I : VC) {
+				if (I.index == tabbedPanel.getSelectedIndex() + 1) {
+					I.UCP.setVisible(false);
+					I.T_name.setEnabled(false);
+					I.T_text.setEnabled(false);
+					I.T_x.setEnabled(false);
+					I.T_y.setEnabled(false);
+					I.T_w.setEnabled(false);
+					I.T_h.setEnabled(false);
+					I.myComboBox.setEnabled(false);
+					I.TP.repaint();
+					VC.removeElement(I);
+					statusLabel.setText("Removed Component");
+					break;
+				}
 			}
-			System.out.println("mode: " + MOM);
-		}
-	}
-
-	class SizeButtonListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			statusLabel.setText("Sizer Mode On");
-
-		}
-	}
-
-	class MoveButtonListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			statusLabel.setText("Mover Mode On");
 		}
 	}
 
 	class TextListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			for (MyComponent I : VC) {
-				if (e.getSource() == I.T_name) {
+				if (e.getSource() == null) {
+					statusLabel.setText("NumberFormatException");
+				} else if (e.getSource() == I.T_name) {
 					I.name = e.getActionCommand();
 					statusLabel.setText("changed Name");
 					I.updata();
 					break;
-				} else if (e.getSource() == null) {
-					statusLabel.setText("NumberFormatException");
+				} else if (e.getSource() == I.T_text) {
+					I.text = e.getActionCommand();
+					statusLabel.setText("changed Text");
+					I.updata();
+					break;
 				} else if (e.getSource() == I.T_x) {
 					I.p.x = Integer.parseInt(e.getActionCommand());
 					statusLabel.setText("changed X");
@@ -203,137 +221,112 @@ public class test {
 		}
 	}
 
-	class RemoveButtonListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			for (MyComponent I : VC) {
-				if (e.getSource() == I.UCP && MOM == 1) {
-					I.UCP.hide();
-					I.T_x.disable();
-					I.T_y.disable();
-					I.T_w.disable();
-					I.T_h.disable();
-					I.T_name.disable();
-					I.updata();
-					VC.removeElement(I);
-					MOM = 0;
-					statusLabel.setText("Removed Component");
-					break;
-				} else if (e.getSource() == I.UCP && MOM == 0) {
-					break;
-				}
-			}
-		}
-	}
-
 	class MakerMouseListener extends MouseAdapter implements MouseMotionListener {
-		
+
 		Point StartP = null;
 		Point EndP = null;
 
 		public void mousePressed(MouseEvent e) {
+			if (MMO == false)
+				return;
 			IOC++;
 			StartP = e.getPoint();
 			VC.add(new MyComponent(IOC, StartP.x, StartP.y, new Dimension(0, 0)));
 		}
 
 		public void mouseReleased(MouseEvent e) {
+			if (MMO == false)
+				return;
 			EndP = e.getPoint();
 			VC.lastElement().setSize(EndP.x - StartP.x, EndP.y - StartP.y);
+			MMO = false;
+			statusLabel.setText("maked Component");
 		}
 
 		public void mouseDragged(MouseEvent e) {
+			if (MMO == false)
+				return;
 			EndP = e.getPoint();
 			VC.lastElement().setSize(EndP.x - StartP.x, EndP.y - StartP.y);
 		}
 	}
 
-	class SelectorMouseListener extends MouseAdapter implements MouseMotionListener{
+	class SelectorMouseListener extends MouseAdapter implements MouseMotionListener {
 		Point StartP = null;
 		Point EndP = null;
-		
-		MyComponent SC = null;//Selected Component
-		
+
+		MyComponent SC = null;// Selected Component
+
 		public void mousePressed(MouseEvent e) {
-			if(centerP == e.getComponent()){//만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
+			if (centerP == e.getComponent()) {// 만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
 				SC = null;
 			}
 			StartP = e.getPoint();
-			for (MyComponent I : VC) {//선택
+			for (MyComponent I : VC) {// 선택
 				if (I.UCP == e.getComponent()) {
 					SC = I;
-					System.out.println(I.UCP.getBackground());
 					I.UCP.setBackground(Color.pink);
-					tabbedPanel.setSelectedIndex(I.index-1);
-				}
-				else{//만약 선택된게 있었더라면 선택 취소
+					tabbedPanel.setSelectedIndex(I.index - 1);
+				} else {// 만약 선택된게 있었더라면 선택 취소
 					I.UCP.setBackground(Color.LIGHT_GRAY);
 				}
 			}
 			System.out.println("StartP : " + StartP);
 		}
 
-/*		public void mouseReleased(MouseEvent e) {
-			if(centerP == e.getComponent()){//만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
-				SC = null;
-				return;
-			}
-			EndP = e.getPoint();
-			System.out.println("EndP : " + EndP);
-		}*/
-
 		public void mouseDragged(MouseEvent e) {
 			int type = e.getComponent().getCursor().getType();
 
-			if(centerP == e.getComponent()){//만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
+			if (centerP == e.getComponent()) {// 만약 마우스가 센터페널이라면 사이즈 변경을 하면 안된다.
 				SC = null;
 				return;
 			}
 			EndP = e.getPoint();
-			switch(type){
+			switch (type) {
 			case Cursor.MOVE_CURSOR:
-				SC.setLocation(e.getComponent().getX() + EndP.x - StartP.x,e.getComponent().getY() + EndP.y - StartP.y);
+				SC.setLocation(e.getComponent().getX() + EndP.x - StartP.x,
+						e.getComponent().getY() + EndP.y - StartP.y);
 				break;
 			case Cursor.SE_RESIZE_CURSOR:
-				SC.setSize(EndP.x+5,EndP.y+5);
+				SC.setSize(EndP.x + 5, EndP.y + 5);
 				break;
-			}			
+			}
 		}
+
 		public void mouseMoved(MouseEvent e) {
-			if(SC == null)
+			if (SC == null)
 				return;
-			else if(SC.UCP == e.getComponent()){
-				if(e.getPoint().distance(SC.SE) < 20){
+			else if (SC.UCP == e.getComponent()) {
+				if (e.getPoint().distance(SC.SE) < 20) {
 					SC.UCP.setCursor(Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR));
 					System.out.println(e.getPoint().distance(SC.SE));
-				}
-				else{
+				} else {
 					SC.UCP.setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
 				}
-			}
-			else{//SC가 존재하고 마우스가 밖에 있을때
+			} else {// SC가 존재하고 마우스가 밖에 있을때
 				SC.UCP.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 			}
+
 		}
 	}
 
-	class MyComponent{
-		//JButton UCP = new JButton();
-		JLabel UCP = new JLabel();
-		//JCheckBox UCP = new JCheckBox();
-		String name;
+	class MyComponent {
+		JComponent UCP = new JButton();
+		String name, text;
 		Point p;
 		Dimension d;
-		
-		int index;
 
-		JPanel TP = new JPanel();//Tabbed_Panel
-		
+		int index, type;// type 0: Button, 1: Label, 2: CheckBox
+
+		JPanel TP = new JPanel();// Tabbed_Panel
+
 		JTextField T_name = new JTextField();
-		// txt add
+		JTextField T_text = new JTextField();
 		JTextField T_x = new JTextField();
 		JTextField T_y = new JTextField();
 		JTextField T_w = new JTextField();
 		JTextField T_h = new JTextField();
+		JComboBox myComboBox;
 
 		Point S = new Point();
 		Point N = new Point();
@@ -343,12 +336,15 @@ public class test {
 		Point SW = new Point();
 		Point NW = new Point();
 		Point NE = new Point();
-		
+
 		MyComponent(int index, int x, int y, Dimension d) {// 위치, 크기
 			this.index = index;
 			setName("Component " + Integer.toString(index));
+			setText("");
 			setLocation(new Point(x, y));
 			setSize(d);
+			String[] comboString = { "Button", "Label", "CheckBox" };
+			myComboBox = new JComboBox(comboString);
 			System.out.println("npd-c");
 			construct();
 		}
@@ -356,7 +352,21 @@ public class test {
 		public void setName(String name) {
 			this.name = name;
 			T_name.setText(name);
-			UCP.setText(name);
+		}
+
+		public void setText(String text) {
+			this.text = text;
+			T_text.setText(text);
+			if (UCP.getClass().getName() == "javax.swing.JButton") {
+				JButton RUCP = (JButton) UCP;// real your component
+				RUCP.setText(text);
+			} else if (UCP.getClass().getName() == "javax.swing.JLabel") {
+				JLabel RUCP = (JLabel) UCP;// real your component
+				RUCP.setText(text);
+			} else if (UCP.getClass().getName() == "javax.swing.JCheckBox") {
+				JCheckBox RUCP = (JCheckBox) UCP;// real your component
+				RUCP.setText(text);
+			}
 		}
 
 		public void setLocation(Point p) {
@@ -388,46 +398,75 @@ public class test {
 			UCP.setSize(w, h);
 			updateCoordinate();
 		}
-		
-		private void updateCoordinate(){
-			S.setLocation(d.width/2, d.height);
-			N.setLocation(d.width/2, 0);
-			W.setLocation(0, d.height/2);
-			E.setLocation(d.width, d.height/2);
+
+		private void updateCoordinate() {
+			S.setLocation(d.width / 2, d.height);
+			N.setLocation(d.width / 2, 0);
+			W.setLocation(0, d.height / 2);
+			E.setLocation(d.width, d.height / 2);
 			SE.setLocation(d.width, d.height);
 			SW.setLocation(0, d.height);
 			NW.setLocation(0, 0);
 			NE.setLocation(d.width, 0);
 		}
-		
+
 		public void updata() {
 			setName(name);
+			setText(text);
 			setLocation(p);
 			setSize(d);
 		}
-		
-		public void construct(){
+
+		public void construct() {
 			mkTab();
 			centerP.add(UCP);
 			T_name.addActionListener(new TextListener());
+			T_text.addActionListener(new TextListener());
 			T_x.addActionListener(new TextListener());
 			T_y.addActionListener(new TextListener());
 			T_w.addActionListener(new TextListener());
 			T_h.addActionListener(new TextListener());
+			myComboBox.addItemListener(new ItemListener() {
+				public void itemStateChanged(ItemEvent e) {
+					UCP.setVisible(false);
+					if (e.getItem().toString() == "Button") {
+						System.out.println("changed Button");
+						UCP = new JButton();
+						type = 0;
+					} else if (e.getItem().toString() == "Label") {
+						System.out.println("changed Label");
+						UCP = new JLabel();
+						type = 1;
+					} else if (e.getItem().toString() == "CheckBox") {
+						System.out.println("changed CheckBox");
+						UCP = new JCheckBox();
+						type = 2;
+					}
+					centerP.add(UCP);
+					updata();
+					System.out.println(UCP.getClass());
+					UCP.setOpaque(true);
+					UCP.setBackground(Color.LIGHT_GRAY);
+					UCP.addMouseMotionListener(SelectorMouse);
+					UCP.addMouseListener(SelectorMouse);
+				}
+			});
 			UCP.setOpaque(true);
 			UCP.setBackground(Color.LIGHT_GRAY);
 			UCP.addMouseMotionListener(SelectorMouse);
 			UCP.addMouseListener(SelectorMouse);
 		}
-		
+
 		void mkTab() {
 			TP.setPreferredSize(new Dimension(200, 100));
 			tabbedPanel.addTab(Integer.toString(index), TP);
-			System.out.println("인덱스" + index + "");
+			System.out.println("Size Of VC: " + VC.size());
 			TP.setLayout(new GridLayout(0, 2));
 
-			TP.add(new JLabel("Name : "));
+			TP.add(new JLabel("Variable Name : "));
 			TP.add(T_name);
+			TP.add(new JLabel("Text : "));
+			TP.add(T_text);
 			TP.add(new JLabel("x : "));
 			TP.add(T_x);
 			TP.add(new JLabel("y : "));
@@ -436,6 +475,8 @@ public class test {
 			TP.add(T_w);
 			TP.add(new JLabel("height : "));
 			TP.add(T_h);
+			TP.add(new JLabel("Type : "));
+			TP.add(myComboBox);
 
 			System.out.println("텝을만들어");
 		}
