@@ -17,10 +17,10 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.Vector;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import java.awt.FileDialog;
 
 //import Test.MyPanel;
 public class test {
@@ -60,16 +60,16 @@ public class test {
 
 		JMenuItem mi_New = new JMenuItem("New");
 		mi_New.addActionListener(new NewButtonListener());
-		
+
 		JMenuItem mi_Open = new JMenuItem("Open");
 		mi_Open.addActionListener(new OpenButtonListener());
-		
+
 		JMenuItem mi_Save = new JMenuItem("Save");
 		mi_Save.addActionListener(new SaveButtonListener());
-		
+
 		JMenuItem mi_Delete = new JMenuItem("Delete");
 		mi_Delete.addActionListener(new DeleteButtonListener());
-		
+
 		m_File.add(mi_New);
 		m_File.add(mi_Open);
 		m_File.add(mi_Save);
@@ -90,10 +90,10 @@ public class test {
 
 		JButton OpenButton = new JButton("Open");
 		OpenButton.addActionListener(new OpenButtonListener());
-		
+
 		JButton SaveButton = new JButton("Save");
 		SaveButton.addActionListener(new SaveButtonListener());
-		
+
 		JButton DeleteButton = new JButton("Delete");
 		DeleteButton.addActionListener(new DeleteButtonListener());
 
@@ -125,7 +125,7 @@ public class test {
 		tabbedPanel.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				for (MyComponent I : VC) {// 선택
-					if (I.index-1 == tabbedPanel.getSelectedIndex()) 
+					if (I.index - 1 == tabbedPanel.getSelectedIndex())
 						I.UCP.setBackground(Color.pink);
 					else // 만약 선택된게 있었더라면 선택 취소
 						I.UCP.setBackground(Color.LIGHT_GRAY);
@@ -141,8 +141,13 @@ public class test {
 
 	class NewButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			MMO = true;
-			statusLabel.setText("Maker Mouse Mode On");
+			if (MMO == false) {
+				MMO = true;
+				statusLabel.setText("Maker Mouse Mode On");
+			} else {
+				MMO = false;
+				statusLabel.setText("Maker Mouse Mode Off");
+			}
 		}
 	}
 
@@ -156,7 +161,13 @@ public class test {
 	class SaveButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			statusLabel.setText("maked Tab");
-
+			FileDialog fd = new FileDialog(new JFrame(), "Save", FileDialog.SAVE);
+			fd.setDirectory(System.getProperty("user.dir"));
+			fd.setFile("*.json");
+			fd.setVisible(true);
+			if (fd.getFile() == null){
+				return;
+			}			
 		}
 	}
 
