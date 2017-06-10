@@ -10,20 +10,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.Vector;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import java.awt.FileDialog;
 
 //import Test.MyPanel;
-public class test {
+public class TeamProject {
 
 	private JFrame mainFrame = new JFrame();
 	private JPanel northP, centerP, westP;
@@ -40,7 +41,7 @@ public class test {
 
 	Vector<MyComponent> VC = new Vector<MyComponent>(); // Vector of Components
 
-	test() {
+	TeamProject() {
 		mainFrame.setTitle("Drawing Square");
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		mainFrame.setSize(1000, 1000);
@@ -67,12 +68,16 @@ public class test {
 		JMenuItem mi_Save = new JMenuItem("Save");
 		mi_Save.addActionListener(new SaveButtonListener());
 
+		JMenuItem mi_Make = new JMenuItem("Make");
+		mi_Make.addActionListener(new MakeButtonListener());
+
 		JMenuItem mi_Delete = new JMenuItem("Delete");
 		mi_Delete.addActionListener(new DeleteButtonListener());
 
 		m_File.add(mi_New);
 		m_File.add(mi_Open);
 		m_File.add(mi_Save);
+		m_File.add(mi_Make);
 		m_File.add(mi_Delete);
 
 		myMenuBar.add(m_File);
@@ -94,6 +99,9 @@ public class test {
 		JButton SaveButton = new JButton("Save");
 		SaveButton.addActionListener(new SaveButtonListener());
 
+		JButton MakeButton = new JButton("Make");
+		MakeButton.addActionListener(new MakeButtonListener());
+
 		JButton DeleteButton = new JButton("Delete");
 		DeleteButton.addActionListener(new DeleteButtonListener());
 
@@ -104,6 +112,7 @@ public class test {
 		toolBar.add(NewButton);
 		toolBar.add(OpenButton);
 		toolBar.add(SaveButton);
+		toolBar.add(MakeButton);
 		toolBar.add(DeleteButton);
 		northP.setVisible(true);
 	}
@@ -136,10 +145,68 @@ public class test {
 	}
 
 	public static void main(String[] args) {
-		new test();
+		new TeamProject();
 	}
 
 	class NewButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			for (MyComponent I : VC)
+				centerP.remove(I.UCP);
+			tabbedPanel.removeAll();
+			VC.removeAllElements();
+			centerP.repaint();
+			IOC = 0;
+		}
+	}
+
+	class OpenButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			FileDialog fd = new FileDialog(new JFrame(), "Open", FileDialog.LOAD);
+			fd.setDirectory(System.getProperty("user.dir"));
+			fd.setFile("*.json");
+			fd.setVisible(true);
+			if (fd.getFile() == null) {
+				statusLabel.setText("Open Cancelled");
+				return;
+			}
+			ParseJSON PJ = new ParseJSON(fd.getDirectory() + fd.getFile());
+			JSONArray CompoArray = PJ.getCompoArray();
+			for (int i = 0; i < CompoArray.size(); i++) {
+				JSONObject CompoInfo = (JSONObject) CompoArray.get(i);
+
+				System.out.println(CompoInfo);
+				
+				String name = CompoInfo.get("Name").toString();
+				String text = CompoInfo.get("Text").toString();
+				int x = Integer.parseInt(CompoInfo.get("X").toString());
+				int y = Integer.parseInt(CompoInfo.get("Y").toString());
+				int w = Integer.parseInt(CompoInfo.get("W").toString());
+				int h = Integer.parseInt(CompoInfo.get("H").toString());
+				int type = Integer.parseInt(CompoInfo.get("Type").toString());
+				VC.add(new MyComponent(i + 1, name, text, x, y, w, h, type));
+			}
+		}
+	}
+
+	class SaveButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			FileDialog fd = new FileDialog(new JFrame(), "Save", FileDialog.SAVE);
+			fd.setDirectory(System.getProperty("user.dir"));
+			fd.setFile("*.json");
+			fd.setVisible(true);
+			if (fd.getFile() == null) {
+				statusLabel.setText("Save Cancelled");
+				return;
+			}
+			MakeJSON MJ = new MakeJSON();
+			for (MyComponent I : VC)
+				MJ.InputMyComponent(I);
+			MJ.SaveCompoSet(fd.getDirectory() + fd.getFile());
+			statusLabel.setText("Save Completed!");
+		}
+	}
+
+	class MakeButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			if (MMO == false) {
 				MMO = true;
@@ -148,43 +215,24 @@ public class test {
 				MMO = false;
 				statusLabel.setText("Maker Mouse Mode Off");
 			}
-		}
-	}
 
-	class OpenButtonListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			statusLabel.setText("maked Tab");
-
-		}
-	}
-
-	class SaveButtonListener implements ActionListener {
-		public void actionPerformed(ActionEvent e) {
-			statusLabel.setText("maked Tab");
-			FileDialog fd = new FileDialog(new JFrame(), "Save", FileDialog.SAVE);
-			fd.setDirectory(System.getProperty("user.dir"));
-			fd.setFile("*.json");
-			fd.setVisible(true);
-			if (fd.getFile() == null){
-				return;
-			}			
 		}
 	}
 
 	class DeleteButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			for (MyComponent I : VC) {
-				if (I.index == tabbedPanel.getSelectedIndex() + 1) {
-					I.UCP.setVisible(false);
+				if (I.index - 1 == tabbedPanel.getSelectedIndex()) {
+					centerP.remove(I.UCP);
 					I.T_name.setEnabled(false);
 					I.T_text.setEnabled(false);
-					I.T_x.setEnabled(false);
-					I.T_y.setEnabled(false);
 					I.T_w.setEnabled(false);
 					I.T_h.setEnabled(false);
+					I.T_x.setEnabled(false);
+					I.T_y.setEnabled(false);
 					I.myComboBox.setEnabled(false);
-					I.TP.repaint();
 					VC.removeElement(I);
+					mainFrame.repaint();
 					statusLabel.setText("Removed Component");
 					break;
 				}
@@ -322,7 +370,7 @@ public class test {
 	}
 
 	class MyComponent {
-		JComponent UCP = new JButton();
+		JComponent UCP;
 		String name, text;
 		Point p;
 		Dimension d;
@@ -339,21 +387,41 @@ public class test {
 		JTextField T_h = new JTextField();
 		JComboBox myComboBox;
 
-		Point S = new Point();
-		Point N = new Point();
-		Point W = new Point();
-		Point E = new Point();
+		/*
+		 * Point S = new Point(); Point N = new Point(); Point W = new Point();
+		 * Point E = new Point();
+		 */// 안씀
 		Point SE = new Point();
-		Point SW = new Point();
-		Point NW = new Point();
-		Point NE = new Point();
+		/*
+		 * Point SW = new Point(); Point NW = new Point(); Point NE = new
+		 * Point();
+		 */
 
 		MyComponent(int index, int x, int y, Dimension d) {// 위치, 크기
+			UCP = new JButton();
 			this.index = index;
-			setName("Component " + Integer.toString(index));
+			setName("Component" + Integer.toString(index));
 			setText("");
 			setLocation(new Point(x, y));
 			setSize(d);
+			String[] comboString = { "Button", "Label", "CheckBox" };
+			myComboBox = new JComboBox(comboString);
+			System.out.println("npd-c");
+			construct();
+		}
+
+		MyComponent(int index, String name, String text, int x, int y, int w, int h, int type) {
+			if (type == 0)
+				UCP = new JButton();
+			else if (type == 1)
+				UCP = new JLabel();
+			else if (type == 2)
+				UCP = new JCheckBox();
+			this.index = index;
+			setName(name);
+			setText(text);
+			setLocation(new Point(x, y));
+			setSize(new Dimension(w, h));
 			String[] comboString = { "Button", "Label", "CheckBox" };
 			myComboBox = new JComboBox(comboString);
 			System.out.println("npd-c");
@@ -411,14 +479,16 @@ public class test {
 		}
 
 		private void updateCoordinate() {
-			S.setLocation(d.width / 2, d.height);
-			N.setLocation(d.width / 2, 0);
-			W.setLocation(0, d.height / 2);
-			E.setLocation(d.width, d.height / 2);
+			/*
+			 * S.setLocation(d.width / 2, d.height); N.setLocation(d.width / 2,
+			 * 0); W.setLocation(0, d.height / 2); E.setLocation(d.width,
+			 * d.height / 2);
+			 */
 			SE.setLocation(d.width, d.height);
-			SW.setLocation(0, d.height);
-			NW.setLocation(0, 0);
-			NE.setLocation(d.width, 0);
+			/*
+			 * SW.setLocation(0, d.height); NW.setLocation(0, 0);
+			 * NE.setLocation(d.width, 0);
+			 */
 		}
 
 		public void updata() {
