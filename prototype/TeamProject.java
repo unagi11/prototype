@@ -13,6 +13,8 @@ import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Vector;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -58,6 +60,7 @@ public class TeamProject {
 
 		JMenuBar myMenuBar = new JMenuBar();
 		JMenu m_File = new JMenu("File");
+		JMenu m_Edit = new JMenu("Edit");
 
 		JMenuItem mi_New = new JMenuItem("New");
 		mi_New.addActionListener(new NewButtonListener());
@@ -68,6 +71,9 @@ public class TeamProject {
 		JMenuItem mi_Save = new JMenuItem("Save");
 		mi_Save.addActionListener(new SaveButtonListener());
 
+		JMenuItem mi_ExportJava = new JMenuItem("ExportJava");
+		mi_ExportJava.addActionListener(new ExportJavaButtonListener());
+
 		JMenuItem mi_Make = new JMenuItem("Make");
 		mi_Make.addActionListener(new MakeButtonListener());
 
@@ -77,10 +83,12 @@ public class TeamProject {
 		m_File.add(mi_New);
 		m_File.add(mi_Open);
 		m_File.add(mi_Save);
-		m_File.add(mi_Make);
-		m_File.add(mi_Delete);
+		m_File.add(mi_ExportJava);
+		m_Edit.add(mi_Make);
+		m_Edit.add(mi_Delete);
 
 		myMenuBar.add(m_File);
+		myMenuBar.add(m_Edit);
 		mainFrame.setJMenuBar(myMenuBar);
 		mainFrame.setVisible(true);
 	}
@@ -99,6 +107,9 @@ public class TeamProject {
 		JButton SaveButton = new JButton("Save");
 		SaveButton.addActionListener(new SaveButtonListener());
 
+		JButton ExportJavaButton = new JButton("ExportJava");
+		ExportJavaButton.addActionListener(new ExportJavaButtonListener());
+
 		JButton MakeButton = new JButton("Make");
 		MakeButton.addActionListener(new MakeButtonListener());
 
@@ -112,6 +123,7 @@ public class TeamProject {
 		toolBar.add(NewButton);
 		toolBar.add(OpenButton);
 		toolBar.add(SaveButton);
+		toolBar.add(ExportJavaButton);
 		toolBar.add(MakeButton);
 		toolBar.add(DeleteButton);
 		northP.setVisible(true);
@@ -121,7 +133,6 @@ public class TeamProject {
 		centerP = new JPanel(null);
 		mainFrame.add(centerP, BorderLayout.CENTER);
 		centerP.setBackground(Color.white);
-
 		centerP.addMouseListener(MakerMouse);
 		centerP.addMouseMotionListener(MakerMouse);
 	}
@@ -169,13 +180,14 @@ public class TeamProject {
 				statusLabel.setText("Open Cancelled");
 				return;
 			}
+			new NewButtonListener().actionPerformed(e);
 			ParseJSON PJ = new ParseJSON(fd.getDirectory() + fd.getFile());
 			JSONArray CompoArray = PJ.getCompoArray();
 			for (int i = 0; i < CompoArray.size(); i++) {
 				JSONObject CompoInfo = (JSONObject) CompoArray.get(i);
 
 				System.out.println(CompoInfo);
-				
+
 				String name = CompoInfo.get("Name").toString();
 				String text = CompoInfo.get("Text").toString();
 				int x = Integer.parseInt(CompoInfo.get("X").toString());
@@ -185,6 +197,7 @@ public class TeamProject {
 				int type = Integer.parseInt(CompoInfo.get("Type").toString());
 				VC.add(new MyComponent(i + 1, name, text, x, y, w, h, type));
 			}
+			IOC = CompoArray.size();
 		}
 	}
 
@@ -203,6 +216,49 @@ public class TeamProject {
 				MJ.InputMyComponent(I);
 			MJ.SaveCompoSet(fd.getDirectory() + fd.getFile());
 			statusLabel.setText("Save Completed!");
+		}
+	}
+
+	class ExportJavaButtonListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			FileDialog fd = new FileDialog(new JFrame(), "ExportJava", FileDialog.SAVE);
+			fd.setDirectory(System.getProperty("user.dir"));
+			fd.setFile("*.java");
+			fd.setVisible(true);
+			if (fd.getFile() == null) {
+				statusLabel.setText("ExportJava Cancelled");
+				return;
+			}
+			FileWriter file;
+
+			String fileName = fd.getFile().substring(0, fd.getName().length() - 4);
+			try {
+				file = new FileWriter(fd.getDirectory() + fd.getFile());
+				file.write("import javax.swing.*;\nimport java.awt.*;\n\npublic class " + fileName
+						+ " extends JFrame {\n\t" + fileName + "(){\n\tsetTitle(\"" + fileName
+						+ "\");\n\tsetDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);\n\t"
+						+ "getContentPane().setBackground(Color.WHITE);\n\tsetLayout(null);\n\t");
+
+				for (MyComponent I : VC) {
+					if (I.type == 0)
+						file.write("JButton " + I.name + " = new JButton(\"" + I.text + "\");");
+					else if (I.type == 1)
+						file.write("JLabel " + I.name + " = new JLabel(\"" + I.text + "\");");
+					else if (I.type == 2)
+						file.write("JCheckBox " + I.name + " = new JCheckBox(\"" + I.text + "\");");
+					file.write("\n\t" + I.name + ".setLocation(new Point(" + I.p.x + "," + I.p.y + "));\n\t" + I.name
+							+ ".setSize(new Dimension(" + I.d.width + "," + I.d.height + "));\n\t" + I.name
+							+ ".setText(\"" + I.text + "\");\n\t" + I.name + ".setOpaque(true);\n\t" + I.name
+							+ ".setBackground(Color.LIGHT_GRAY);\n\tadd(" + I.name + ");\n\t");
+				}
+				file.write("setSize(750, 870);\nsetVisible(true);\n}\npublic static void main(String[] args) {\nnew "
+						+ fileName + "();\n}\n}");
+				file.flush();
+				file.close();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		}
 	}
 
@@ -411,19 +467,26 @@ public class TeamProject {
 		}
 
 		MyComponent(int index, String name, String text, int x, int y, int w, int h, int type) {
-			if (type == 0)
+			String[] comboString = { "Button", "Label", "CheckBox" };
+			myComboBox = new JComboBox(comboString);
+			if (type == 0) {
+				this.type = type;
 				UCP = new JButton();
-			else if (type == 1)
+				myComboBox.setSelectedIndex(0);
+			} else if (type == 1) {
+				this.type = type;
 				UCP = new JLabel();
-			else if (type == 2)
+				myComboBox.setSelectedIndex(1);
+			} else if (type == 2) {
+				this.type = type;
 				UCP = new JCheckBox();
+				myComboBox.setSelectedIndex(2);
+			}
 			this.index = index;
 			setName(name);
 			setText(text);
 			setLocation(new Point(x, y));
 			setSize(new Dimension(w, h));
-			String[] comboString = { "Button", "Label", "CheckBox" };
-			myComboBox = new JComboBox(comboString);
 			System.out.println("npd-c");
 			construct();
 		}
@@ -496,6 +559,8 @@ public class TeamProject {
 			setText(text);
 			setLocation(p);
 			setSize(d);
+			
+			System.out.println(name + " ," + text);
 		}
 
 		public void construct() {
