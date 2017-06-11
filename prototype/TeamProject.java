@@ -230,8 +230,7 @@ public class TeamProject {
 				return;
 			}
 			FileWriter file;
-
-			String fileName = fd.getFile().substring(0, fd.getName().length() - 4);
+			String fileName = fd.getFile().substring(0, fd.getFile().length()-5);
 			try {
 				file = new FileWriter(fd.getDirectory() + fd.getFile());
 				file.write("import javax.swing.*;\nimport java.awt.*;\n\npublic class " + fileName
